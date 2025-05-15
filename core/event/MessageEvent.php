@@ -11,6 +11,7 @@ class MessageEvent
   public $channel_id;
   public $guild_id;
   public $timestamp;
+  public $matches;
   public function __construct($data)
   {
     $this->raw_data = $data;
