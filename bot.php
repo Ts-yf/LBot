@@ -87,8 +87,6 @@ if ($op == 13) {
 if ($op == 0) {
   include "core/plugin/PluginManager.php";
   include "core/event/MessageEvent.php";
-  include "core/hash/hash.php";
-  $o = new OpenIDConverter('data/id_map.json');
   $pluginManager = new PluginManager();
   $pluginManager->loadPlugins();
   $event = new MessageEvent($data);
