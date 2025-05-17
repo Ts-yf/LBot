@@ -5,20 +5,6 @@ $appid = "";
 $secret = "";
 
 include "function/Access.php";
-// 立即返回200响应
-http_response_code(200);
-header('Content-Type: application/json');
-if (function_exists('fastcgi_finish_request')) {
-  fastcgi_finish_request();
-} else {
-  ob_end_flush();
-  flush();
-}
-
-// 开始异步处理
-ignore_user_abort(true);
-set_time_limit(0);
-
 
 //定义全局变量
 $GLOBALS['appid'] = $appid;
@@ -68,7 +54,7 @@ if (empty($data)) {
   $info .= "脚本执行时间: " . round(microtime(true) - $_SERVER["REQUEST_TIME_FLOAT"], 4) . " 秒\n";
   //$info .= "已加载的PHP扩展: " . implode(", ", get_loaded_extensions()) . "\n";
   // 输出纯文本结果
-  echo $me;
+  echo $info;
   exit;
 }
 //echo Json(['code' => 0, 'msg' => '接收成功']);

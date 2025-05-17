@@ -30,48 +30,31 @@ class MessageEvent
 
   public function reply($content = '', array $raw = [])
   {
-    $ark = [
-      'template_id' => 23,
-      'kv' => [
-        ['key' => '#DESC#', 'value' => 'TSmoe'],
-        ['key' => '#PROMPT#', 'value' => '闲仁Bot'],
-        [
-          'key' => '#LIST#',
-          'obj' => [
-            [
-              'obj_kv' => [
-                ['key' => 'desc', 'value' => $content]
-              ]
-            ],
-            [
-              'obj_kv' => [
-                ['key' => 'desc', 'value' => '点击邀我进群'],
-                ['key' => 'link', 'value' => 'https://QUN.QQ.COM/qunpro/robot/qunshare?robot_uin=3889042293']
-              ]
-            ]
-          ]
-        ]
-      ]
-    ];
+
     $payload = json_encode([
-      "msg_id" => $this->message_id,
-      "msg_type" => 3,
-      "ark" => $ark,
+      "msg_type" => 0,
+      "content" => $content,
       "msg_seq" => rand(10000, 999999)
     ]);
     if (empty($content)) {
       $payload = Json($raw);
     }
     switch ($this->event_type) {
-      case "GROUP_AT_MESSAGE_CREATE":
+      case "GROUP_AT_MESSAGE_CREATE": //群消息
+        $payload['msg_id'] = $this->message_id;
         $response = BOTAPI("/v2/groups/{$this->group_id}/messages", "POST", $payload);
-      case "GROUP_ADD_ROBOT":
+      case "C2C_MESSAGE_CREATE": //私聊消息
+        $payload['msg_id'] = $this->message_id;
+        $response = BOTAPI("/v2/users/{$this->user_id}/messages", "POST", $payload);
+      case "GROUP_ADD_ROBOT": //群添加机器人
+        $payload['event_id'] = $this->get('d/id');
         $response = BOTAPI("/v2/groups/{$this->group_id}/messages", "POST", $payload);
-      case "test":
+      case "INTERACTION_CREATE": //按钮消息
+        $payload['event_id'] = $this->get('d/id');
+        $response = BOTAPI("/v2/groups/{$this->group_id}/messages", "POST", $payload);
+      case "test": //测试
         echo $content;
         $response = '{}';
-      case "C2C_MESSAGE_CREATE":
-        $response = BOTAPI("/v2/users/{$this->user_id}/messages", "POST", $payload);
     }
     return $response;
   }
