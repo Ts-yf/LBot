@@ -122,7 +122,7 @@ class MessageEvent
                         }
                         $messages[] = $payload;
                         $i += 2; // Skip both the current text and the next image
-                        continue; // Move to the next iteration
+                        continue 2; // Move to the next iteration
                     } else {
                         // Standard text message
                         if (preg_match_all('/https?:\/\/[\w\-]+(\.[\w\-]+)+[\w\-\.,@?^=%&:\/~\+#!]*[\w\-\@?^=%&\/~\+#]/', $payload['content'], $matches)) {
@@ -134,7 +134,7 @@ class MessageEvent
                         }
                         $messages[] = $payload;
                         $i++;
-                        continue; // Move to the next iteration
+                        continue 2; // Move to the next iteration
                     }
                 case 'video':
                     $payload['msg_type'] = 7;
@@ -334,7 +334,7 @@ class MessageEvent
             return ['file_info' => null]; // 或者抛出异常
         }
 
-        $result = BOTAPI("{$this->baseUrl}/files", "POST", $body); // 假设上传文件的端点是 /files
+        $result = BOTAPI("{$this->baseUrl}/files", "POST", Json($body)); // 假设上传文件的端点是 /files
         $responseData = json_decode($result, true);
 
         // 检查API响应是否成功以及是否包含 file_info
@@ -356,14 +356,8 @@ class MessageEvent
     {
         // 【重要配置】设置你的 ffmpeg 和 Silk 编码器路径
         global $config;
-        $ffmpegPath = $config['ffmpeg_path'] ?? 'ffmpeg'; // 从配置读取 ffmpeg 路径
-        $silkEncoderPath = $config['silk_v3_encoder'] ?? 'silk_v3_encoder'; // 从配置读取 silk 编码器路径 (注意 config.php 中是 silk_v3_decoder, 将在 config 中修正)
-
-        // 检查必要的工具是否存在 (可选，但推荐)
-        // if (empty(shell_exec("command -v " . escapeshellarg($ffmpegPath)))) { error_log("convertToSilk: ffmpeg not found at " . $ffmpegPath); return false; }
-        // if (empty(shell_exec("command -v " . escapeshellarg($silkEncoderPath)))) { error_log("convertToSilk: silk_v3_encoder not found at " . $silkEncoderPath); return false; }
-
-        // 创建临时输入文件
+        $ffmpegPath = $config['ffmpeg_path'] ?? 'ffmpeg';
+        $silkEncoderPath = $config['silk_v3_encoder'] ?? 'silk_v3_encoder';
         $inputFile = tempnam(sys_get_temp_dir(), 'audio_in_');
         if ($inputFile === false || file_put_contents($inputFile, $rawAudioData) === false) {
             error_log("convertToSilk: Failed to create or write temporary input file.");
@@ -371,37 +365,29 @@ class MessageEvent
             return false;
         }
 
-        // 创建临时 PCM 文件路径
-        $pcmFile = $inputFile . '.pcm'; // 在同目录下创建 .pcm 文件
+        $pcmFile = $inputFile . '.pcm';
+        $silkOutputFile = $inputFile . '.silk';
 
-        // 创建最终 Silk 输出文件路径
-        $silkOutputFile = $inputFile . '.silk'; // 在同目录下创建 .silk 文件
-
-        // 步骤 1: 使用 ffmpeg 转换为 PCM
-        // ffmpeg -i "${convFile}" -f s16le -ar 48000 -ac 1 "${convFile}.pcm"
         $ffmpegCommand = sprintf("%s -i %s -f s16le -ar 48000 -ac 1 %s",
-            escapeshellarg($ffmpegPath), // <--- 修正：使用 escapeshellarg 确保路径被正确引用
+            escapeshellarg($ffmpegPath),
             escapeshellarg($inputFile),
             escapeshellarg($pcmFile)
         );
 
-        exec($ffmpegCommand . " >> ffmpeg.log 2>&1");
+        @shell_exec($ffmpegCommand . " > /dev/null 2>&1");
 
         if (!file_exists($pcmFile) || filesize($pcmFile) === 0) {
             error_log("convertToSilk: ffmpeg conversion to PCM failed or PCM file is empty. Command: " . $ffmpegCommand);
             @unlink($inputFile);
             return false;
         }
-
-        // 步骤 2: 使用 silk_v3_encoder 转换为 Silk
-        // silk_v3_encoder "${convFile}.pcm" "${convFile}.silk" -Fs_API 48000 -rate 48000 -tencent
         $silkCommand = sprintf("%s %s %s -Fs_API 48000 -rate 48000 -tencent",
             escapeshellarg($silkEncoderPath),
             escapeshellarg($pcmFile),
             escapeshellarg($silkOutputFile)
         );
 
-        exec($silkCommand . " >> silk_v3_encoder.log 2>&1");
+        @shell_exec($silkCommand . " > /dev/null 2>&1");
 
         $silkData = false;
         if (file_exists($silkOutputFile) && filesize($silkOutputFile) > 0) {
@@ -410,7 +396,6 @@ class MessageEvent
             error_log("convertToSilk: silk_v3_encoder conversion failed or Silk file is empty/not created. Command: " . $silkCommand);
         }
 
-        // 清理临时文件
         if (file_exists($inputFile)) {
             @unlink($inputFile);
         }
