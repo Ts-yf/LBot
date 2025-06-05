@@ -307,15 +307,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             }
         }
         $msg_id = $event->message_id;
-        $msg_log = file_get_contents('message.log');
+        $log_file_path = __DIR__ . '/message.log';
+        $msg_log = file_get_contents($log_file_path);
         if (strpos($msg_log, $msg_id) !== false) {
             echo Json(['status' => 'error', 'message' => '消息重复']);
             exit;
         }
-        if (filesize('message.log') > 10000000) {
-            file_put_contents('message.log', '');
+        if (filesize($log_file_path) > 10000000) {
+            file_put_contents($log_file_path, '');
         }
-        file_put_contents('message.log', $data . "\n", FILE_APPEND);
+        file_put_contents($log_file_path, $data . "\n", FILE_APPEND);
         if (!$pluginManager->dispatchMessage($event)) {
             //无插件匹配处理
             exit;
