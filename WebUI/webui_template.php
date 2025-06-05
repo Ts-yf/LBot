@@ -464,60 +464,58 @@
 
             <!-- 统计信息卡片 -->
             <div class="row mb-4">
-                <div class="col-md-4">
-                    <div class="card dashboard-card">
+                <div class="col-12 col-md-4">
+                    <div class="card dashboard-card h-100">
                         <div class="card-body">
                             <div class="d-flex align-items-center mb-3">
                                 <i class="bi bi-chat-dots fs-2 me-2 text-primary"></i>
-                                <h5 class="card-title mb-0">消息统计</h5>
+                                <h5 class="card-title mb-0">今日消息</h5>
+                            </div>
+                            <div>
+                                <p class="mb-1">接收: <strong id="messages-received">0</strong></p>
+                                <p class="mb-1">发送: <strong id="messages-sent">0</strong></p>
+                            </div>
+                            <button class="btn btn-sm btn-outline-primary mt-2" onclick="updateDailyMessageStats()">
+                                    <i class="bi bi-arrow-clockwise"></i>
+                                </button>
+                            <small class="text-muted d-block mt-1">来自统计API</small>
+                            </div>
+                        </div>
+                </div>
+                <!-- 新增：日活跃用户 -->
+                <div class="col-12 col-md-4 mt-3 mt-md-0">
+                    <div class="card dashboard-card h-100">
+                        <div class="card-body">
+                            <div class="d-flex align-items-center mb-3">
+                                <i class="bi bi-people fs-2 me-2 text-warning"></i>
+                                <h5 class="card-title mb-0">日活跃用户</h5>
                             </div>
                             <div class="d-flex justify-content-between align-items-center">
                                 <div>
-                                    <h3 class="mb-1" id="total-messages">0</h3>
-                                    <small class="text-muted">今日消息总数</small>
+                                    <h3 class="mb-1" id="daily-active-users-count">0</h3>
+                                    <small class="text-muted">今日活跃用户数</small>
                                 </div>
-                                <button class="btn btn-sm btn-outline-primary" onclick="loadMessages()">
+                                <button class="btn btn-sm btn-outline-warning" onclick="updateDailyActiveUsers()">
                                     <i class="bi bi-arrow-clockwise"></i>
                                 </button>
                             </div>
                         </div>
                     </div>
                 </div>
-                <div class="col-md-4">
-                    <div class="card dashboard-card">
-                        <div class="card-body">
+                <!-- 新增：热门指令 -->
+                <div class="col-12 col-md-4 mt-3 mt-md-0">
+                    <div class="card dashboard-card h-100">
+                        <div class="card-body d-flex flex-column">
                             <div class="d-flex align-items-center mb-3">
-                                <i class="bi bi-puzzle fs-2 me-2 text-success"></i>
-                                <h5 class="card-title mb-0">插件状态</h5>
+                                <i class="bi bi-lightning-charge fs-2 me-2 text-danger"></i>
+                                <h5 class="card-title mb-0">今日热门指令</h5>
                             </div>
-                            <div class="d-flex justify-content-between align-items-center">
-                                <div>
-                                    <h3 class="mb-1" id="active-plugins">0</h3>
-                                    <small class="text-muted">已启用插件数</small>
-                                </div>
-                                <button class="btn btn-sm btn-outline-success" onclick="loadPlugins()">
-                                    <i class="bi bi-arrow-clockwise"></i>
-                                </button>
+                            <div id="top-commands-list" style="max-height: 100px; overflow-y: auto; flex-grow: 1;">
+                                <small class="text-muted">加载中...</small>
                             </div>
-                        </div>
-                    </div>
-                </div>
-                <div class="col-md-4">
-                    <div class="card dashboard-card">
-                        <div class="card-body">
-                            <div class="d-flex align-items-center mb-3">
-                                <i class="bi bi-clock-history fs-2 me-2 text-info"></i>
-                                <h5 class="card-title mb-0">运行状态</h5>
-                            </div>
-                            <div class="d-flex justify-content-between align-items-center">
-                                <div>
-                                    <h3 class="mb-1" id="uptime">0分钟</h3>
-                                    <small class="text-muted">已运行时间</small>
-                                </div>
-                                <div class="connection-status-badge" id="connection-status-badge">
-                                    <span class="badge bg-success">在线</span>
-                                </div>
-                            </div>
+                            <button class="btn btn-sm btn-outline-danger mt-2 align-self-start" onclick="updateCommandFrequency()">
+                                <i class="bi bi-arrow-clockwise"></i> 刷新
+                            </button>
                         </div>
                     </div>
                 </div>
@@ -666,50 +664,62 @@
         const urlParams = new URLSearchParams(window.location.search);
         const webUiPasswordFromUrl = urlParams.get('password');
 
-        // 更新消息统计
-        function updateMessageStats() {
-            let apiUrl = '?api=messages';
-            if (webUiPasswordFromUrl) { apiUrl += '&password=' + encodeURIComponent(webUiPasswordFromUrl); }
-            $.get(apiUrl, function (response) {
-                if (response.data) {
-                    const todayMessages = response.data.filter(msg => {
-                        const msgDate = new Date(msg.timestamp * 1000).toLocaleDateString();
-                        const today = new Date().toLocaleDateString();
-                        return msgDate === today;
-                    }).length;
-                    $('#total-messages').text(todayMessages);
-                }
-            });
-        }
-
-        // 更新插件统计
-        function updatePluginStats() {
-            let apiUrl = '?api=plugins';
+        // 更新每日消息统计 (来自新的统计API)
+        function updateDailyMessageStats() {
+            let apiUrl = '?api=stats_daily_messages'; // 使用新的API端点
             if (webUiPasswordFromUrl) { apiUrl += '&password=' + encodeURIComponent(webUiPasswordFromUrl); }
             $.get(apiUrl, function (response) {
                 if (response.status === 'success' && response.data) {
-                    const activePlugins = response.data.filter(plugin => plugin.status === 'enabled').length;
-                    $('#active-plugins').text(activePlugins);
+                    $('#messages-received').text(response.data.received || 0);
+                    $('#messages-sent').text(response.data.sent || 0);
+                } else {
+                    $('#messages-received').text('错误');
+                    $('#messages-sent').text('错误');
                 }
+            }).fail(function() {
+                $('#messages-received').text('N/A');
+                $('#messages-sent').text('N/A');
             });
         }
 
-        // 更新运行时间
-        function updateUptime() {
-            const startTime = new Date().getTime() - (Math.floor(Math.random() * 3600) + 1) * 1000; // 示例：随机1-3600秒
-            setInterval(() => {
-                const now = new Date().getTime();
-                const diff = now - startTime;
-                const minutes = Math.floor(diff / (1000 * 60));
-                const hours = Math.floor(minutes / 60);
-                let uptimeText = '';
-                if (hours > 0) {
-                    uptimeText = `${hours}小时${minutes % 60}分钟`;
+        // 更新日活跃用户 (DAU)
+        function updateDailyActiveUsers() {
+            let apiUrl = '?api=stats_daily_active_users';
+            if (webUiPasswordFromUrl) { apiUrl += '&password=' + encodeURIComponent(webUiPasswordFromUrl); }
+            $.get(apiUrl, function (response) {
+                if (response.status === 'success') {
+                    $('#daily-active-users-count').text(response.dau || 0);
                 } else {
-                    uptimeText = `${minutes}分钟`;
+                    $('#daily-active-users-count').text('错误');
                 }
-                $('#uptime').text(uptimeText);
-            }, 60000); // 每分钟更新一次
+            }).fail(function() {
+                $('#daily-active-users-count').text('N/A');
+            });
+        }
+
+        // 更新指令频次统计
+        function updateCommandFrequency() {
+            let apiUrl = '?api=stats_command_frequency&limit=5'; // 获取前5条
+            if (webUiPasswordFromUrl) { apiUrl += '&password=' + encodeURIComponent(webUiPasswordFromUrl); }
+            const container = $('#top-commands-list');
+            container.html('<small class="text-muted">加载中...</small>');
+
+            $.get(apiUrl, function (response) {
+                if (response.status === 'success' && response.data && response.data.length > 0) {
+                    let listHtml = '<ul class="list-unstyled mb-0">';
+                    response.data.forEach(function(item) {
+                        listHtml += `<li>${item.command}: ${item.count}次</li>`;
+                    });
+                    listHtml += '</ul>';
+                    container.html(listHtml);
+                } else if (response.status === 'success' && (!response.data || response.data.length === 0)) {
+                    container.html('<small class="text-muted">暂无数据</small>');
+                } else {
+                    container.html('<small class="text-danger">加载失败</small>');
+                }
+            }).fail(function() {
+                container.html('<small class="text-danger">请求失败</small>');
+            });
         }
 
         // 更新系统状态
@@ -867,11 +877,14 @@
             loadPlugins(); // 加载插件列表
 
             // 初始化仪表盘功能
-            updateMessageStats();
-            updatePluginStats();
-            updateUptime();
-            setInterval(updateMessageStats, 60000); // 每分钟更新一次消息统计
-            setInterval(updatePluginStats, 60000); // 每分钟更新一次插件统计
+            updateDailyMessageStats();
+            updateDailyActiveUsers();
+            updateCommandFrequency();
+
+            setInterval(updateDailyMessageStats, 60000); // 每分钟更新一次消息统计
+            // setInterval(updatePluginStats, 60000); // 已移除插件状态卡片，故注释
+            setInterval(updateDailyActiveUsers, 300000); // 每5分钟更新一次DAU
+            setInterval(updateCommandFrequency, 300000); // 每5分钟更新一次热门指令
 
             // 绑定事件
             $('#refresh-msglog').click(loadMessages);

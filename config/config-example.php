@@ -24,4 +24,11 @@ return [
     ],
     'ffmpeg_path' => 'C:\\Program Files\\ffmpeg\\bin\\ffmpeg.exe',
     'silk_v3_encoder' => 'C:\\Program Files\\ffmpeg\\bin\\silk_v3_encoder.exe',
+    'database' => [
+        // 'host' => '127.0.0.1:3306', //注释此行表示不使用数据库
+        'dbname' => '', //数据库名
+        'user' => '', //数据库用户名
+        'password' => '', //数据库密码
+        'driver' => 'mysql', //可选mysql，sqlite，etc
+    ],
 ];
