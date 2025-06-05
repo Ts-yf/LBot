@@ -42,6 +42,22 @@
        'webui' => [
            'password' => '设置一个Web后台访问密码', // 可选，如果留空或不设置此项，则后台无需密码即可访问
        ],
+        // 图片上传配置
+        'image_upload' => [
+           'qqbot' => [
+           'channel' => '', // 子频道ID，用于QQbot图床
+          ],
+        'qqshare' => [
+            'p_uin' => '', // QQ号，用于QQShare图床
+            'p_skey' => '', // connect.qq.com的p_skey，用于QQShare图床
+          ],
+        'bilibili' => [
+            'csrf_token' => '', // bili_jct，用于B站图床
+            'sessdata' => '', // SESSDATA，用于B站图床
+          ],
+        ],
+        'ffmpeg_path' => 'C:\\Program Files\\ffmpeg\\bin\\ffmpeg.exe',
+        'silk_v3_encoder' => 'C:\\Program Files\\ffmpeg\\bin\\silk_v3_encoder.exe',
    ];
    ```
 4. 🌐 在你的QQ开放平台后台，找到事件订阅（Webhook）配置，将**回调地址**设置为 `http(s)://你的域名或IP/bot.php`。
