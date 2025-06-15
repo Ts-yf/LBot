@@ -1,6 +1,8 @@
 # LBot 灵Bot QQ机器人 🤖
 
-✨ 一个基于PHP的QQ机器人Webhook框架，支持插件扩展和Web管理后台，轻松实现多种自定义功能。
+✨ 一个基于PHP的QQ机器人Webhook框架，支持插件扩展和Web管理后台，轻松实现多种自定义功能。  
+
+[![访问量](https://count.getloli.com/get/@ts-yf:LBot?theme=rule34)](./)
 
 ## ✨ 功能特点
 
