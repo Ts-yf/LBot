@@ -1,13 +1,49 @@
 <?php
+function 检查Token有效性($cache) {
+    if (!isset($cache['timestamp']) || !isset($cache['expires_in'])) {
+        return false;
+    }
+    $currentTime = time() * 1000; // 转换为毫秒
+    return ($cache['timestamp'] + $cache['expires_in']) > $currentTime;
+}
+
+function 保存Token缓存($tokenData) {
+    $cacheFile = __DIR__ . '/../data/bot_token_cache.json';
+    $cacheData = [
+        'access_token' => $tokenData['access_token'],
+        'expires_in' => $tokenData['expires_in'],
+        'timestamp' => time() * 1000 // 转换为毫秒
+    ];
+    file_put_contents($cacheFile, json_encode($cacheData));
+}
+
 function BOT凭证()
 {
-    //引进数据
+    $cacheFile = __DIR__ . '/../data/bot_token_cache.json';
+    
+    // 检查缓存是否存在且有效
+    if (file_exists($cacheFile)) {
+        $cache = json_decode(file_get_contents($cacheFile), true);
+        if ($cache && 检查Token有效性($cache)) {
+            return $cache['access_token'];
+        }
+    }
+
+    // 获取新token
     $appid = $GLOBALS['appid'];
     $Secret = $GLOBALS['secret'];
     $url = "https://bots.qq.com/app/getAppAccessToken";
     $json = Json(["appId" => $appid, "clientSecret" => $Secret]);
     $header = array('Content-Type: application/json');
-    return Json取(curl($url, "POST", $header, $json), "access_token");
+    $response = curl($url, "POST", $header, $json);
+    $tokenData = json_decode($response, true);
+    
+    if (isset($tokenData['access_token']) && isset($tokenData['expires_in'])) {
+        保存Token缓存($tokenData);
+        return $tokenData['access_token'];
+    }
+    
+    return Json取($response, "access_token"); // 保持原有行为作为fallback
 }
 
 function BOTAPI($Address, $me, $json)
