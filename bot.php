@@ -277,7 +277,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $data = file_get_contents('php://input');
     $json = json_decode($data, true);
     $op = $json["op"];
-    $t = $json["t"];
 
     //签名校验
     if ($op == 13) {
